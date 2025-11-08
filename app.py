@@ -12,6 +12,7 @@ import json
 import yaml
 import subprocess
 import threading
+import logging
 from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Optional
@@ -20,6 +21,21 @@ from dataclasses import dataclass, asdict
 from flask import Flask, render_template, request, jsonify, session
 from flask_socketio import SocketIO, emit
 from flask_cors import CORS
+
+# Setup logging
+logs_dir = Path("logs")
+logs_dir.mkdir(exist_ok=True)
+log_file = logs_dir / f"orchestrator_{datetime.now().strftime('%Y%m%d')}.log"
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    handlers=[
+        logging.FileHandler(log_file),
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24)
@@ -151,6 +167,7 @@ def select_topics():
 def run_stage1(session: OrchestratorSession):
     """Run DocIdeaGenerator (Stage 1)"""
     try:
+        logger.info(f"Starting Stage 1 for session {session.session_id}")
         socketio.emit('progress', {
             'stage': 1,
             'message': 'Starting idea generation...',
@@ -162,7 +179,9 @@ def run_stage1(session: OrchestratorSession):
         idea_generator_path = scripts_dir / "DocIdeaGenerator" / "cli.py"
 
         if not idea_generator_path.exists():
-            raise FileNotFoundError(f"DocIdeaGenerator not found at {idea_generator_path}")
+            error_msg = f"DocIdeaGenerator not found at {idea_generator_path}"
+            logger.error(error_msg)
+            raise FileNotFoundError(error_msg)
 
         # Create session directory
         session_dir = sessions_dir / session.session_id
@@ -186,6 +205,9 @@ def run_stage1(session: OrchestratorSession):
             ]
 
             # Add optional arguments
+            if config['idea_generation'].get('email'):
+                cmd.extend(["--email", config['idea_generation']['email']])
+                logger.info(f"Processing specific email: {config['idea_generation']['email']}")
             if config['idea_generation'].get('start_date'):
                 cmd.extend(["--start-date", config['idea_generation']['start_date']])
             if config['idea_generation'].get('label'):
@@ -194,6 +216,8 @@ def run_stage1(session: OrchestratorSession):
                 cmd.extend(["--focus", config['idea_generation']['focus']])
             if config['idea_generation'].get('combined_topics'):
                 cmd.append("--combined-topics")
+
+            logger.info(f"Running DocIdeaGenerator with command: {' '.join(cmd)}")
 
             socketio.emit('progress', {
                 'stage': 1,
@@ -214,13 +238,16 @@ def run_stage1(session: OrchestratorSession):
             )
 
             # Log the output for debugging
-            print(f"DocIdeaGenerator stdout: {result.stdout}")
-            print(f"DocIdeaGenerator stderr: {result.stderr}")
-            print(f"DocIdeaGenerator return code: {result.returncode}")
+            logger.info(f"DocIdeaGenerator return code: {result.returncode}")
+            if result.stdout:
+                logger.info(f"DocIdeaGenerator stdout: {result.stdout}")
+            if result.stderr:
+                logger.warning(f"DocIdeaGenerator stderr: {result.stderr}")
 
             # Check if DocIdeaGenerator failed
             if result.returncode != 0:
                 error_msg = result.stderr if result.stderr else result.stdout
+                logger.error(f"DocIdeaGenerator failed with return code {result.returncode}: {error_msg}")
                 raise RuntimeError(f"DocIdeaGenerator failed with return code {result.returncode}: {error_msg}")
 
             socketio.emit('progress', {
@@ -230,12 +257,17 @@ def run_stage1(session: OrchestratorSession):
             }, broadcast=True)
 
             # Find generated topic files
+            logger.info(f"Searching for topic files in {idea_gen_dir}")
             topic_files = list(idea_gen_dir.glob("topic_*.md"))
             if not topic_files:
                 topic_files = list(idea_gen_dir.glob("analysis_*.md"))
 
             if not topic_files:
-                raise RuntimeError("No topic files generated. DocIdeaGenerator may have run in interactive mode and failed to generate topics.")
+                error_msg = "No topic files generated. DocIdeaGenerator may have run in interactive mode and failed to generate topics."
+                logger.error(error_msg)
+                raise RuntimeError(error_msg)
+
+            logger.info(f"Found {len(topic_files)} topic files")
 
             # Move files and parse
             topics = []
@@ -271,6 +303,8 @@ def run_stage1(session: OrchestratorSession):
             }
             session.status = 'reviewing'
 
+            logger.info(f"Stage 1 completed successfully. Generated {len(topics)} topics")
+
             socketio.emit('progress', {
                 'stage': 1,
                 'message': f'Generated {len(topics)} topics. Ready for review.',
@@ -287,6 +321,7 @@ def run_stage1(session: OrchestratorSession):
             os.chdir(original_cwd)
 
     except Exception as e:
+        logger.error(f"Stage 1 failed: {str(e)}", exc_info=True)
         session.status = 'error'
         session.error = str(e)
         socketio.emit('error', {
@@ -298,8 +333,11 @@ def run_stage1(session: OrchestratorSession):
 def run_stage2(session: OrchestratorSession):
     """Run PersonalizedDocGenerator (Stage 2)"""
     try:
+        logger.info(f"Starting Stage 2 for session {session.session_id}")
         selected = session.selected_topics
         total = len(selected)
+
+        logger.info(f"Generating {total} documents")
 
         socketio.emit('progress', {
             'stage': 2,
@@ -319,6 +357,7 @@ def run_stage2(session: OrchestratorSession):
         documents = []
 
         for i, topic in enumerate(selected, 1):
+            logger.info(f"Processing document {i}/{total}: {topic['title']}")
             socketio.emit('progress', {
                 'stage': 2,
                 'message': f'Generating document {i}/{total}: {topic["title"][:40]}...',
@@ -344,6 +383,7 @@ def run_stage2(session: OrchestratorSession):
                 cmd.extend(["--customer-story", config['document_generation']['customer_story']])
 
             # Run document generator
+            logger.info(f"Running PersonalizedDocGenerator with command: {' '.join(cmd)}")
             result = subprocess.run(
                 cmd,
                 capture_output=True,
@@ -352,12 +392,14 @@ def run_stage2(session: OrchestratorSession):
             )
 
             if result.returncode == 0:
+                logger.info(f"Document '{topic['title']}' generated successfully")
                 documents.append({
                     'topic': topic['title'],
                     'status': 'success',
                     'output': result.stdout
                 })
             else:
+                logger.error(f"Document '{topic['title']}' failed: {result.stderr[:200]}")
                 documents.append({
                     'topic': topic['title'],
                     'status': 'failed',
@@ -368,6 +410,8 @@ def run_stage2(session: OrchestratorSession):
         session.status = 'completed'
 
         successful = len([d for d in documents if d['status'] == 'success'])
+
+        logger.info(f"Stage 2 completed. {successful}/{total} documents generated successfully")
 
         socketio.emit('progress', {
             'stage': 2,
@@ -383,6 +427,7 @@ def run_stage2(session: OrchestratorSession):
         }, broadcast=True)
 
     except Exception as e:
+        logger.error(f"Stage 2 failed: {str(e)}", exc_info=True)
         session.status = 'error'
         session.error = str(e)
         socketio.emit('error', {
