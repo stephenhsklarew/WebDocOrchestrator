@@ -131,10 +131,10 @@
                         </select>
                     </div>
                     <div class="mb-4">
-                        <label class="block text-gray-700 font-medium mb-2">Email Subject (optional)</label>
-                        <input type="text" id="emailSubject" placeholder="Meeting Notes"
+                        <label class="block text-gray-700 font-medium mb-2">Email Subject <span class="text-red-600">*</span></label>
+                        <input type="text" id="emailSubject" placeholder="Meeting Notes" required
                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                        <p class="text-xs text-gray-500 mt-1">Partial match works. Leave blank to process all emails matching filters.</p>
+                        <p class="text-xs text-gray-500 mt-1">Partial match works (e.g., "Notes" matches "Notes: Meeting with...").</p>
                     </div>
                     <div class="mb-4">
                         <label class="block text-gray-700 font-medium mb-2">Start Date (MMDDYYYY)</label>
@@ -280,6 +280,13 @@
         });
 
         function startPipeline() {
+            // Validate required fields
+            const emailSubject = document.getElementById('emailSubject').value.trim();
+            if (!emailSubject) {
+                showError('Email Subject is required. Please enter an email subject (partial match works).');
+                return;
+            }
+
             const config = {
                 name: document.getElementById('pipelineName').value,
                 global: {
@@ -287,7 +294,7 @@
                 },
                 idea_generation: {
                     source: document.getElementById('ideaSource').value,
-                    email: document.getElementById('emailSubject').value,
+                    email: emailSubject,
                     start_date: document.getElementById('startDate').value,
                     label: document.getElementById('gmailLabel').value,
                     focus: document.getElementById('contentFocus').value,
@@ -315,10 +322,17 @@
             })
             .then(response => response.json())
             .then(data => {
+                if (data.error) {
+                    showError(data.error);
+                    return;
+                }
                 document.getElementById('configPanel').classList.add('hidden');
                 document.getElementById('stageProgress').classList.remove('hidden');
                 document.getElementById('stage1-indicator').classList.remove('stage-pending');
                 document.getElementById('stage1-indicator').classList.add('stage-active');
+                // Show spinner immediately for Stage 1
+                document.getElementById('progress1-spinner').classList.remove('hidden');
+                document.getElementById('progressMessage').textContent = 'Starting idea generation...';
             })
             .catch(error => showError(error.message));
         }
