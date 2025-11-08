@@ -326,6 +326,9 @@
                     showError(data.error);
                     return;
                 }
+                // Clear any previous errors
+                hideError();
+
                 document.getElementById('configPanel').classList.add('hidden');
                 document.getElementById('stageProgress').classList.remove('hidden');
                 document.getElementById('stage1-indicator').classList.remove('stage-pending');
@@ -492,6 +495,11 @@
         function showError(message) {
             document.getElementById('errorMessage').textContent = message;
             document.getElementById('errorPanel').classList.remove('hidden');
+        }
+
+        function hideError() {
+            document.getElementById('errorPanel').classList.add('hidden');
+            document.getElementById('errorMessage').textContent = '';
         }
     </script>
 </body>
