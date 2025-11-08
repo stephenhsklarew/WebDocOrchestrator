@@ -155,7 +155,7 @@ def run_stage1(session: OrchestratorSession):
             'stage': 1,
             'message': 'Starting idea generation...',
             'progress': 0
-        })
+        }, broadcast=True)
 
         # Paths to programs
         scripts_dir = Path(__file__).parent.parent
@@ -199,27 +199,43 @@ def run_stage1(session: OrchestratorSession):
                 'stage': 1,
                 'message': 'Running DocIdeaGenerator...',
                 'progress': 25
-            })
+            }, broadcast=True)
 
-            # Run DocIdeaGenerator (this will be interactive - user needs to interact with terminal)
-            # For web version, we'd ideally want a batch mode
+            # Run DocIdeaGenerator in non-interactive mode
+            # Note: If no --email is specified, DocIdeaGenerator will try to be interactive
+            # We need to provide stdin=DEVNULL to prevent hanging
+            # TODO: Add --batch mode to DocIdeaGenerator for non-interactive processing
             result = subprocess.run(
                 cmd,
                 capture_output=True,
                 text=True,
+                stdin=subprocess.DEVNULL,
                 timeout=config['orchestration']['stage1_timeout']
             )
+
+            # Log the output for debugging
+            print(f"DocIdeaGenerator stdout: {result.stdout}")
+            print(f"DocIdeaGenerator stderr: {result.stderr}")
+            print(f"DocIdeaGenerator return code: {result.returncode}")
+
+            # Check if DocIdeaGenerator failed
+            if result.returncode != 0:
+                error_msg = result.stderr if result.stderr else result.stdout
+                raise RuntimeError(f"DocIdeaGenerator failed with return code {result.returncode}: {error_msg}")
 
             socketio.emit('progress', {
                 'stage': 1,
                 'message': 'Analyzing generated topics...',
                 'progress': 75
-            })
+            }, broadcast=True)
 
             # Find generated topic files
             topic_files = list(idea_gen_dir.glob("topic_*.md"))
             if not topic_files:
                 topic_files = list(idea_gen_dir.glob("analysis_*.md"))
+
+            if not topic_files:
+                raise RuntimeError("No topic files generated. DocIdeaGenerator may have run in interactive mode and failed to generate topics.")
 
             # Move files and parse
             topics = []
@@ -260,12 +276,12 @@ def run_stage1(session: OrchestratorSession):
                 'message': f'Generated {len(topics)} topics. Ready for review.',
                 'progress': 100,
                 'complete': True
-            })
+            }, broadcast=True)
 
             socketio.emit('stage1_complete', {
                 'topics': topics,
                 'count': len(topics)
-            })
+            }, broadcast=True)
 
         finally:
             os.chdir(original_cwd)
@@ -276,7 +292,7 @@ def run_stage1(session: OrchestratorSession):
         socketio.emit('error', {
             'stage': 1,
             'message': f'Error in Stage 1: {str(e)}'
-        })
+        }, broadcast=True)
 
 
 def run_stage2(session: OrchestratorSession):
@@ -289,7 +305,7 @@ def run_stage2(session: OrchestratorSession):
             'stage': 2,
             'message': f'Generating {total} documents...',
             'progress': 0
-        })
+        }, broadcast=True)
 
         # Paths
         scripts_dir = Path(__file__).parent.parent
@@ -309,7 +325,7 @@ def run_stage2(session: OrchestratorSession):
                 'progress': int((i-1) / total * 100),
                 'current': i,
                 'total': total
-            })
+            }, broadcast=True)
 
             # Build command
             cmd = [
@@ -358,13 +374,13 @@ def run_stage2(session: OrchestratorSession):
             'message': f'Completed! {successful}/{total} documents generated.',
             'progress': 100,
             'complete': True
-        })
+        }, broadcast=True)
 
         socketio.emit('stage2_complete', {
             'documents': documents,
             'successful': successful,
             'total': total
-        })
+        }, broadcast=True)
 
     except Exception as e:
         session.status = 'error'
@@ -372,7 +388,7 @@ def run_stage2(session: OrchestratorSession):
         socketio.emit('error', {
             'stage': 2,
             'message': f'Error in Stage 2: {str(e)}'
-        })
+        }, broadcast=True)
 
 
 @socketio.on('connect')
