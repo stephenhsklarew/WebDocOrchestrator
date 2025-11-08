@@ -201,7 +201,8 @@ def run_stage1(session: OrchestratorSession):
                 "python3", str(idea_generator_path),
                 "--mode", config['global']['mode'],
                 "--source", config['idea_generation']['source'],
-                "--save-local"
+                "--save-local",
+                "--yes"  # Auto-confirm for non-interactive mode
             ]
 
             # Add optional arguments

@@ -37,6 +37,26 @@
         .stage-pending {
             @apply bg-gray-300;
         }
+        .spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #2563eb;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .spinner-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -56,8 +76,12 @@
                     <div id="stage1-indicator" class="stage-indicator stage-pending">1</div>
                     <span class="text-gray-700">Idea Generation</span>
                 </div>
-                <div class="flex-1 mx-4 h-2 bg-gray-200 rounded">
-                    <div id="progress1" class="h-2 bg-blue-600 rounded transition-all duration-300" style="width: 0%"></div>
+                <div class="flex-1 mx-4">
+                    <div id="progress1-spinner" class="spinner-container hidden">
+                        <div class="spinner"></div>
+                        <span class="text-sm text-gray-600">Processing...</span>
+                    </div>
+                    <div id="progress1-complete" class="hidden text-green-600 text-center">✓ Complete</div>
                 </div>
                 <div class="flex items-center space-x-4">
                     <div id="stage2-indicator" class="stage-indicator stage-pending">2</div>
@@ -304,8 +328,12 @@
             message.textContent = data.message;
 
             if (data.stage === 1) {
-                document.getElementById('progress1').style.width = data.progress + '%';
+                // Show spinner for Stage 1 (can't track subprocess progress)
+                document.getElementById('progress1-spinner').classList.remove('hidden');
+
                 if (data.complete) {
+                    document.getElementById('progress1-spinner').classList.add('hidden');
+                    document.getElementById('progress1-complete').classList.remove('hidden');
                     document.getElementById('stage1-indicator').classList.remove('stage-active');
                     document.getElementById('stage1-indicator').classList.add('stage-complete');
                 }
