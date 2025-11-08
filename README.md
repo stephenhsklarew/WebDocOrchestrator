@@ -35,7 +35,7 @@ pip3 install -r requirements.txt
 python3 app.py
 ```
 
-Open your browser to: **http://localhost:5000**
+Open your browser to: **http://localhost:5001**
 
 ## 📖 How to Use
 
@@ -161,7 +161,7 @@ All configuration is done through the web UI:
 python3 app.py
 ```
 
-Access from other devices: `http://YOUR_IP:5000`
+Access from other devices: `http://YOUR_IP:5001`
 
 ### Run on a Server
 
@@ -169,7 +169,7 @@ Access from other devices: `http://YOUR_IP:5000`
 # For production, use gunicorn with eventlet
 pip3 install gunicorn
 
-gunicorn --worker-class eventlet -w 1 app:app --bind 0.0.0.0:5000
+gunicorn --worker-class eventlet -w 1 app:app --bind 0.0.0.0:5001
 ```
 
 ### Secure with HTTPS (Optional)
@@ -185,7 +185,7 @@ server {
     ssl_certificate_key /path/to/key.pem;
 
     location / {
-        proxy_pass http://localhost:5000;
+        proxy_pass http://localhost:5001;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
@@ -206,7 +206,7 @@ The dashboard uses WebSockets for real-time communication:
 
 ### Single User (Desktop)
 - Run locally on your machine
-- Quick access via `localhost:5000`
+- Quick access via `localhost:5001`
 - Ideal for personal content creation
 
 ### Team Access (Network)
@@ -244,7 +244,7 @@ socketio.run(app, host='0.0.0.0', port=5001, debug=True)
 ### WebSocket Connection Failed
 
 - Check firewall settings
-- Ensure port 5000 is open
+- Ensure port 5001 is open
 - Try accessing via IP address instead of hostname
 
 ### DocIdeaGenerator Not Found

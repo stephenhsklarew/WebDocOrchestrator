@@ -392,8 +392,8 @@ if __name__ == '__main__':
     print("=" * 60)
     print("🚀 WebDocOrchestrator Starting")
     print("=" * 60)
-    print("\nOpen your browser to: http://localhost:5000")
+    print("\nOpen your browser to: http://localhost:5001")
     print("\nPress Ctrl+C to stop the server\n")
     print("=" * 60)
 
-    socketio.run(app, host='0.0.0.0', port=5000, debug=True, allow_unsafe_werkzeug=True)
+    socketio.run(app, host='0.0.0.0', port=5001, debug=True, allow_unsafe_werkzeug=True)

@@ -21,7 +21,7 @@ You'll see:
 🚀 WebDocOrchestrator Starting
 ============================================================
 
-Open your browser to: http://localhost:5000
+Open your browser to: http://localhost:5001
 
 Press Ctrl+C to stop the server
 
@@ -30,7 +30,7 @@ Press Ctrl+C to stop the server
 
 ### 3. Open the Dashboard
 
-Open your browser to: **http://localhost:5000**
+Open your browser to: **http://localhost:5001**
 
 ### 4. Configure Your Pipeline
 
@@ -123,8 +123,8 @@ Click **🚀 Start Pipeline** button
 
 ### "Cannot connect to server"
 - Make sure `python3 app.py` is running
-- Check http://localhost:5000 not https
-- Try http://127.0.0.1:5000 instead
+- Check http://localhost:5001 not https
+- Try http://127.0.0.1:5001 instead
 
 ### "DocIdeaGenerator not found"
 - Ensure DocIdeaGenerator is at `../DocIdeaGenerator`
@@ -135,8 +135,9 @@ Click **🚀 Start Pipeline** button
 - Copy from another project or download from Google Cloud
 
 ### Port Already in Use
-- Edit `app.py` last line: change `port=5000` to `port=5001`
-- Access via http://localhost:5001
+- Default port is now 5001 (changed from 5000 due to macOS conflicts)
+- If port 5001 is in use, edit `app.py` last line: change `port=5001` to `port=5002`
+- Access via http://localhost:5002
 
 ## Tips
 
@@ -152,9 +153,9 @@ Click **🚀 Start Pipeline** button
 - Scale up to 5-10 for production
 
 ### Remote Access
-Server runs on `0.0.0.0:5000` - accessible from network:
+Server runs on `0.0.0.0:5001` - accessible from network:
 - Find your IP: `ifconfig | grep "inet "`
-- Access from other devices: `http://YOUR_IP:5000`
+- Access from other devices: `http://YOUR_IP:5001`
 - Works on phones and tablets!
 
 ### Multiple Pipelines
