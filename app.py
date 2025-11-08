@@ -44,7 +44,8 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Global state
 current_session = None
-sessions_dir = Path("sessions")
+# Use absolute path for sessions directory to avoid issues when changing cwd
+sessions_dir = Path(__file__).parent / "sessions"
 sessions_dir.mkdir(exist_ok=True)
 
 
@@ -199,6 +200,8 @@ def run_stage1(session: OrchestratorSession):
         session_dir.mkdir(exist_ok=True)
         topics_dir = session_dir / "topics"
         topics_dir.mkdir(exist_ok=True)
+        logger.info(f"Session directory: {session_dir.absolute()}")
+        logger.info(f"Topics directory: {topics_dir.absolute()}")
 
         # Change to DocIdeaGenerator directory
         idea_gen_dir = idea_generator_path.parent
@@ -298,6 +301,7 @@ def run_stage1(session: OrchestratorSession):
                 # Move to session topics directory
                 dest_path = topics_dir / file_path.name
                 import shutil
+                logger.info(f"Moving file from {file_path} to {dest_path}")
                 shutil.move(str(file_path), str(dest_path))
 
                 topics.append({
