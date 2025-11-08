@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+*.egg-info/
+
+# Flask
+instance/
+.webassets-cache
+
+# Session data
+sessions/
+*.json
+!config.example.json
+
+# Config files (may contain sensitive data)
+*.yaml
+!config.example.yaml
+
+# Google credentials
+credentials.json
+token.pickle
+*.pickle
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Output
+output/
