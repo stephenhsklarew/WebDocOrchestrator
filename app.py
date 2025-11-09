@@ -454,15 +454,45 @@ def run_stage2(session: OrchestratorSession):
 
 @socketio.on('connect')
 def handle_connect():
-    """Handle client connection"""
-    print('Client connected')
+    """Handle client connection and sync with current session state"""
+    logger.info('Client connected')
     emit('connected', {'status': 'ok'})
+
+    # If there's an active session, sync the reconnected client with current state
+    global current_session
+    if current_session:
+        logger.info(f"Syncing reconnected client with session {current_session.session_id}, status: {current_session.status}")
+
+        if current_session.status == 'reviewing' and current_session.stage1_results:
+            # Stage 1 completed, send results to client
+            logger.info("Sending stage1_complete event to reconnected client")
+            emit('stage1_complete', {
+                'topics': current_session.stage1_results['topics'],
+                'count': current_session.stage1_results['count']
+            })
+        elif current_session.status == 'completed' and current_session.stage2_results:
+            # Stage 2 completed, send results
+            logger.info("Sending stage2_complete event to reconnected client")
+            documents = current_session.stage2_results
+            successful = len([d for d in documents if d['status'] == 'success'])
+            emit('stage2_complete', {
+                'documents': documents,
+                'successful': successful,
+                'total': len(documents)
+            })
+        elif current_session.status == 'error':
+            # Session has an error
+            logger.info("Sending error event to reconnected client")
+            emit('error', {
+                'stage': 1 if not current_session.stage1_results else 2,
+                'message': current_session.error
+            })
 
 
 @socketio.on('disconnect')
 def handle_disconnect():
     """Handle client disconnection"""
-    print('Client disconnected')
+    logger.info('Client disconnected')
 
 
 if __name__ == '__main__':
