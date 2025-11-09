@@ -462,14 +462,30 @@
             })
             .then(response => response.json())
             .then(data => {
+                // Hide review panel
                 document.getElementById('reviewPanel').classList.add('hidden');
+
+                // Mark Stage 2 (Review) as complete
+                document.getElementById('stage2-indicator').classList.remove('stage-active');
+                document.getElementById('stage2-indicator').classList.add('stage-complete');
+                document.getElementById('progress2').style.width = '100%';
+
+                // Activate Stage 3 (Document Generation)
                 document.getElementById('stage3-indicator').classList.remove('stage-pending');
                 document.getElementById('stage3-indicator').classList.add('stage-active');
+
+                // Update progress message
+                document.getElementById('progressMessage').textContent = `Generating ${selectedTopics.size} documents...`;
             })
             .catch(error => showError(error.message));
         }
 
         function showResults(data) {
+            // Mark Stage 3 (Document Generation) as complete
+            document.getElementById('stage3-indicator').classList.remove('stage-active');
+            document.getElementById('stage3-indicator').classList.add('stage-complete');
+            document.getElementById('progressMessage').textContent = `Pipeline complete! ${data.successful}/${data.total} documents generated successfully.`;
+
             const summary = document.getElementById('resultsSummary');
             const successful = data.successful || 0;
             const total = data.total || 0;
