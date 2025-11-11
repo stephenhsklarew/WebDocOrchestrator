@@ -119,14 +119,6 @@
                         <input type="text" id="pipelineName" value="My Content Pipeline"
                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                     </div>
-                    <div class="mb-4">
-                        <label class="block text-gray-700 font-medium mb-2">Mode</label>
-                        <select id="globalMode" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                            <option value="test">Test (Local - Qwen 2.5 32B, Free)</option>
-                            <option value="production">Production (Local - Qwen 2.5 32B, Free)</option>
-                        </select>
-                        <p class="text-xs text-gray-500 mt-1">Both modes now use local Qwen by default. Enable "Fast Mode" below for cloud-based Gemini 2.5 Flash.</p>
-                    </div>
                 </div>
 
                 <!-- Idea Generation -->
@@ -306,7 +298,7 @@
             const config = {
                 name: document.getElementById('pipelineName').value,
                 global: {
-                    mode: document.getElementById('globalMode').value
+                    mode: 'test'  // Always use test mode (Qwen 2.5 32B by default)
                 },
                 idea_generation: {
                     source: document.getElementById('ideaSource').value,
