@@ -139,10 +139,10 @@
                         </select>
                     </div>
                     <div class="mb-4">
-                        <label class="block text-gray-700 font-medium mb-2">Email Subject <span class="text-red-600">*</span></label>
-                        <input type="text" id="emailSubject" placeholder="Meeting Notes" required
+                        <label class="block text-gray-700 font-medium mb-2">Email Subject (optional)</label>
+                        <input type="text" id="emailSubject" placeholder="Meeting Notes"
                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                        <p class="text-xs text-gray-500 mt-1">Partial match works (e.g., "Notes" matches "Notes: Meeting with...").</p>
+                        <p class="text-xs text-gray-500 mt-1">Leave blank to process all emails, or enter a partial match (e.g., "Notes" matches "Notes: Meeting with...").</p>
                     </div>
                     <div class="mb-4">
                         <label class="block text-gray-700 font-medium mb-2">Start Date (MMDDYYYY)</label>
@@ -289,12 +289,8 @@
         });
 
         function startPipeline() {
-            // Validate required fields
+            // Get email subject (optional - if blank, processes all emails)
             const emailSubject = document.getElementById('emailSubject').value.trim();
-            if (!emailSubject) {
-                showError('Email Subject is required. Please enter an email subject (partial match works).');
-                return;
-            }
 
             // Store output location for later display
             outputLocation = document.getElementById('output').value;

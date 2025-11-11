@@ -104,15 +104,6 @@ def start_session():
 
     config = request.json
 
-    # Validate required fields
-    if config.get('idea_generation', {}).get('source') == 'gmail':
-        email = config.get('idea_generation', {}).get('email', '').strip()
-        if not email:
-            logger.error("Email subject is required for Gmail mode")
-            return jsonify({
-                'error': 'Email subject is required. Please specify which email to process.'
-            }), 400
-
     session_id = datetime.now().strftime("%Y%m%d_%H%M%S")
     logger.info(f"Starting new session {session_id}")
 
@@ -223,6 +214,8 @@ def run_stage1(session: OrchestratorSession):
             if config['idea_generation'].get('email'):
                 cmd.extend(["--email", config['idea_generation']['email']])
                 logger.info(f"Processing specific email: {config['idea_generation']['email']}")
+            else:
+                logger.info("No email specified - will process all emails matching criteria")
             if config['idea_generation'].get('start_date'):
                 cmd.extend(["--start-date", config['idea_generation']['start_date']])
             if config['idea_generation'].get('label'):
