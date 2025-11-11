@@ -206,16 +206,19 @@ def run_stage1(session: OrchestratorSession):
                 "python3", str(idea_generator_path),
                 "--mode", config['global']['mode'],
                 "--source", config['idea_generation']['source'],
-                "--save-local",
-                "--yes"  # Auto-confirm for non-interactive mode
+                "--save-local"
             ]
 
             # Add optional arguments
             if config['idea_generation'].get('email'):
+                # Process specific email
                 cmd.extend(["--email", config['idea_generation']['email']])
+                cmd.append("--yes")  # Auto-confirm for single email
                 logger.info(f"Processing specific email: {config['idea_generation']['email']}")
             else:
-                logger.info("No email specified - will process all emails matching criteria")
+                # Batch process all emails
+                cmd.append("--batch")
+                logger.info("No email specified - batch processing all emails matching criteria")
             if config['idea_generation'].get('start_date'):
                 cmd.extend(["--start-date", config['idea_generation']['start_date']])
             if config['idea_generation'].get('label'):
