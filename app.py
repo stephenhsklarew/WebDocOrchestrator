@@ -78,7 +78,8 @@ def get_example_config():
             'start_date': '01012025',
             'label': 'AIQ',
             'focus': 'AI transformation and business strategy',
-            'combined_topics': False
+            'combined_topics': False,
+            'fast_mode': False
         },
         'document_generation': {
             'style': '',
@@ -227,6 +228,9 @@ def run_stage1(session: OrchestratorSession):
                 cmd.extend(["--focus", config['idea_generation']['focus']])
             if config['idea_generation'].get('combined_topics'):
                 cmd.append("--combined-topics")
+            if config['idea_generation'].get('fast_mode'):
+                cmd.append("--fast")
+                logger.info("Fast mode enabled - using Gemini 2.5 Flash (300+ tok/s)")
 
             logger.info(f"Running DocIdeaGenerator with command: {' '.join(cmd)}")
 
