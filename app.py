@@ -278,7 +278,32 @@ def run_stage1(session: OrchestratorSession):
                 topic_files = list(idea_gen_dir.glob("analysis_*.md"))
 
             if not topic_files:
-                error_msg = "No topic files generated. DocIdeaGenerator may have run in interactive mode and failed to generate topics."
+                # No files generated - check if there was an error in the output
+                error_details = []
+
+                # Look for error messages in stdout
+                if result.stdout:
+                    for line in result.stdout.split('\n'):
+                        if 'error' in line.lower() or 'failed' in line.lower() or 'blocked' in line.lower():
+                            error_details.append(line.strip())
+
+                # Look for error messages in stderr
+                if result.stderr:
+                    for line in result.stderr.split('\n'):
+                        if 'error' in line.lower() or 'failed' in line.lower() or 'blocked' in line.lower():
+                            error_details.append(line.strip())
+
+                # Build detailed error message
+                if error_details:
+                    error_summary = "\n".join(error_details[:5])  # Show first 5 error lines
+                    error_msg = f"No topic files generated. DocIdeaGenerator encountered errors:\n\n{error_summary}"
+                else:
+                    error_msg = "No topic files generated. DocIdeaGenerator may have run in interactive mode or failed silently."
+                    # Include last 10 lines of output for debugging
+                    if result.stdout:
+                        last_lines = result.stdout.strip().split('\n')[-10:]
+                        error_msg += f"\n\nLast output:\n" + "\n".join(last_lines)
+
                 logger.error(error_msg)
                 raise RuntimeError(error_msg)
 
